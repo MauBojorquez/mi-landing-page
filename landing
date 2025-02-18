@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crea tu Agente de IA</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap');
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #0d0d0d;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #1c1c1c;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(203, 161, 94, 0.8);
+            text-align: left;
+        }
+        .timer {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #cba15e;
+            text-align: center;
+        }
+        .boton-pago {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .boton-pago a {
+            display: inline-block;
+            padding: 15px 25px;
+            background-color: #cba15e;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1.2em;
+            transition: background 0.3s;
+        }
+        .boton-pago a:hover {
+            background-color: #a7854d;
+        }
+    </style>
+    <script>
+        function startTimer(duration) {
+            let timer = duration * 60;
+            const interval = setInterval(() => {
+                let minutes = Math.floor(timer / 60);
+                let seconds = timer % 60;
+                document.getElementById('countdown').textContent = `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+                if (timer <= 0) {
+                    clearInterval(interval);
+                    document.getElementById('countdown').textContent = "Oferta finalizada!";
+                }
+                timer--;
+            }, 1000);
+        }
+        window.onload = function() {
+            startTimer(10);
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Oferta por Tiempo Limitado</h1>
+        <p class="timer" id="countdown">10:00</p>
+        
+        <div class="vsl">
+            <h2>Mira este video antes de que el tiempo termine</h2>
+            <iframe width="100%" height="400" src="https://www.youtube.com/embed/VIDEO_ID" frameborder="0" allowfullscreen></iframe>
+        </div>
+        
+        <div class="seccion">
+            <h2>¿Por qué tomar este webinar?</h2>
+            <p>La revolución de la IA ya está aquí, y si no la aprovechas otros lo harán por ti.</p>
+            <p>Aprenderás a crear y personalizar tu propio agente de IA sin necesidad de programar.</p>
+            <p>Automatiza tareas, optimiza tu tiempo y aumenta tu productividad.</p>
+        </div>
+        <div class="seccion">
+            <h2>Temario</h2>
+            <ul>
+                <li>Introducción a los agentes de IA y su impacto en el trabajo</li>
+                <li>Qué es un GPT y cómo está transformando la productividad en negocios y emprendimientos</li>
+                <li>Casos de éxito y aplicaciones prácticas en diferentes industrias</li>
+                <li>Creación y personalización de tu GPT sin programar</li>
+                <li>Opciones de personalización según tu sector o necesidad</li>
+                <li>Herramientas y plataformas recomendadas</li>
+                <li>Cómo entrenarlo con información específica</li>
+                <li>Buenas prácticas para mejorar su desempeño</li>
+                <li>Errores comunes y cómo solucionarlos</li>
+            </ul>
+        </div>
+        <div class="boton-pago">
+            <h2>Accede Ahora</h2>
+            <a href="https://pago.clip.mx/es/4517d159-0af1-4025-92c7-986f7d4e6251" target="_blank">Comprar Básico</a>
+            <a href="https://pago.clip.mx/es/1e787593-7261-4056-9586-239742562c0e" target="_blank">Comprar Premium</a>
+            <a href="https://pago.clip.mx/es/07ef8224-86c9-4cf5-8abb-808aac12824e" target="_blank">Comprar VIP</a>
+        </div>
+    </div>
+</body>
+</html>
