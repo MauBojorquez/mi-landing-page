@@ -1,0 +1,5 @@
+# Credenciales y datos locales — nunca subir a GitHub
+trading-bot/.env
+trading-bot/bot_log.txt
+__pycache__/
+*.pyc
