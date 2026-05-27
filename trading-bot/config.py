@@ -1,5 +1,5 @@
 """
-Configuración central del bot. Las credenciales se leen del archivo .env (nunca va a GitHub).
+Configuración central del bot.
 """
 
 import os
@@ -7,32 +7,33 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# --- Conexión MT5 (se leen de .env) ---
+# --- Conexión MT5 ---
 MT5_LOGIN    = int(os.getenv("MT5_LOGIN", "0"))
 MT5_PASSWORD = os.getenv("MT5_PASSWORD", "")
 MT5_SERVER   = os.getenv("MT5_SERVER", "")
 
-# --- Activo a operar ---
-SYMBOL    = "EURUSD"
-TIMEFRAME = "H1"          # M1, M5, M15, M30, H1, H4, D1
+# --- Pares a operar ---
+SYMBOLS   = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD"]
+TIMEFRAME = "H1"
 
 # --- Gestión de riesgo ---
-RISK_PERCENT   = 1.0      # % del capital arriesgado por operación (1% = conservador)
-ATR_SL_MULT    = 1.5      # Multiplicador ATR para stop loss
-ATR_TP_MULT    = 2.5      # Multiplicador ATR para take profit (ratio 2.5:1)
-MAX_OPEN_TRADES = 1       # Máximo de operaciones abiertas simultáneas
+RISK_PERCENT          = 1.0   # % del balance arriesgado por operación
+ATR_SL_MULT           = 1.5   # Multiplicador ATR para stop loss
+ATR_TP_MULT           = 2.5   # Multiplicador ATR para take profit
+MAX_OPEN_TRADES_TOTAL = 2     # Máximo de posiciones abiertas en total (todos los pares)
+MAX_DAILY_LOSS_PCT    = 3.0   # Para el bot si pierde este % del balance en el día
 
 # --- Parámetros de indicadores ---
-EMA_FAST   = 50           # EMA rápida (tendencia corta)
-EMA_SLOW   = 200          # EMA lenta (tendencia principal)
+EMA_FAST   = 50
+EMA_SLOW   = 200
 RSI_PERIOD = 14
-RSI_BUY    = 45           # RSI por debajo de este valor = zona de compra
-RSI_SELL   = 55           # RSI por encima de este valor = zona de venta
+RSI_BUY    = 45
+RSI_SELL   = 55
 MACD_FAST  = 12
 MACD_SLOW  = 26
 MACD_SIG   = 9
 ATR_PERIOD = 14
 
 # --- Control del bot ---
-CHECK_INTERVAL_SECONDS = 60   # Cada cuántos segundos revisa el mercado
+CHECK_INTERVAL_SECONDS = 60
 LOG_FILE = "bot_log.txt"

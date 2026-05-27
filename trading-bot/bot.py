@@ -1,78 +1,114 @@
 """
-Bot principal. Ejecuta el ciclo de análisis y trading de forma automática.
-
-USO:
-  python bot.py
+Bot principal multi-par con límite de pérdida diaria.
 
 FLUJO EN CADA CICLO:
-  1. Obtiene las últimas velas de MT5
-  2. Calcula indicadores (EMA, RSI, MACD, ATR)
-  3. Evalúa si hay señal de compra o venta
-  4. Si hay señal y no hay posición abierta, calcula lotes y ejecuta la orden
-  5. Espera el intervalo configurado y repite
+  1. Verifica si se alcanzó el límite de pérdida diaria (-3%)
+  2. Para cada par configurado en SYMBOLS:
+     a. Si ya hay MAX_OPEN_TRADES_TOTAL posiciones abiertas → para
+     b. Si ya hay 1 posición abierta en ese par → salta al siguiente
+     c. Calcula indicadores y busca señal
+     d. Si hay señal → calcula lotes y ejecuta orden
+  3. Espera 60 segundos y repite
 """
 
 import time
 import sys
-from datetime import datetime
+import datetime
 
 import mt5_connector as mt5c
 from strategy import calculate_indicators, generate_signal
 from risk_manager import calculate_lot_size
 from logger import log
-from config import CHECK_INTERVAL_SECONDS, MAX_OPEN_TRADES, SYMBOL, TIMEFRAME
+from config import (
+    SYMBOLS, CHECK_INTERVAL_SECONDS,
+    MAX_OPEN_TRADES_TOTAL, MAX_DAILY_LOSS_PCT
+)
+
+_daily_start_balance = None
+_daily_start_date    = None
+
+
+def get_daily_start_balance() -> float:
+    global _daily_start_balance, _daily_start_date
+    today = datetime.date.today()
+    if _daily_start_date != today:
+        _daily_start_balance = mt5c.get_account_balance()
+        _daily_start_date    = today
+        log(f"--- Nuevo día | Balance inicial del día: {_daily_start_balance:.2f} ---")
+    return _daily_start_balance
+
+
+def daily_loss_exceeded() -> bool:
+    start   = get_daily_start_balance()
+    equity  = mt5c.get_account_equity()
+    pct     = (equity - start) / start * 100
+    if pct <= -MAX_DAILY_LOSS_PCT:
+        log(f"LIMITE DIARIO ALCANZADO | Pérdida del día: {pct:.2f}% | Límite: -{MAX_DAILY_LOSS_PCT}% | Sin más operaciones hoy.")
+        return True
+    return False
 
 
 def run_cycle():
-    df = mt5c.get_candles(bars=300)
-    if df.empty:
-        log("Sin datos de mercado, reintentando...")
+    if daily_loss_exceeded():
         return
 
-    df = calculate_indicators(df)
-    if df.empty:
+    total_open = mt5c.count_all_open_positions()
+    if total_open >= MAX_OPEN_TRADES_TOTAL:
+        log(f"Posiciones abiertas: {total_open}/{MAX_OPEN_TRADES_TOTAL}. Esperando cierre.")
         return
 
-    last    = df.iloc[-1]
-    price   = last["close"]
-    rsi_val = last["rsi"]
-    ema_f   = last["ema_fast"]
-    ema_s   = last["ema_slow"]
+    balance = mt5c.get_account_balance()
 
-    log(f"Análisis {SYMBOL} {TIMEFRAME} | Precio: {price:.5f} | EMA{50}: {ema_f:.5f} | EMA{200}: {ema_s:.5f} | RSI: {rsi_val:.1f}")
+    for symbol in SYMBOLS:
+        total_open = mt5c.count_all_open_positions()
+        if total_open >= MAX_OPEN_TRADES_TOTAL:
+            log(f"Límite de posiciones alcanzado ({total_open}/{MAX_OPEN_TRADES_TOTAL}). Pausando nuevas entradas.")
+            break
 
-    signal = generate_signal(df)
+        if mt5c.count_open_positions(symbol) >= 1:
+            log(f"{symbol}: ya tiene posición abierta, saltando.")
+            continue
 
-    open_trades = mt5c.count_open_positions()
-    if open_trades >= MAX_OPEN_TRADES:
-        log(f"Posiciones abiertas: {open_trades}/{MAX_OPEN_TRADES}. Esperando cierre.")
-        return
+        df = mt5c.get_candles(symbol, bars=300)
+        if df.empty:
+            continue
 
-    if signal is None:
-        log("Sin señal. Esperando confluencia...")
-        return
+        df = calculate_indicators(df)
+        if df.empty:
+            continue
 
-    log(f"*** SEÑAL DETECTADA: {signal['signal']} | RSI={signal['rsi']:.1f} | ATR={signal['atr']:.5f} ***")
+        last  = df.iloc[-1]
+        log(f"{symbol} | Precio: {last['close']:.5f} | EMA50: {last['ema_fast']:.5f} | EMA200: {last['ema_slow']:.5f} | RSI: {last['rsi']:.1f}")
 
-    balance      = mt5c.get_account_balance()
-    sl_distance  = abs(price - signal["sl"])
-    lots         = calculate_lot_size(balance, sl_distance)
+        signal = generate_signal(df)
+        if signal is None:
+            log(f"{symbol}: Sin señal.")
+            continue
 
-    if lots <= 0:
-        log("ERROR: Tamaño de lote inválido. Operación cancelada.")
-        return
+        log(f"*** SEÑAL {symbol}: {signal['signal']} | RSI={signal['rsi']:.1f} | ATR={signal['atr']:.5f} ***")
 
-    mt5c.send_order(
-        order_type=signal["signal"],
-        volume=lots,
-        sl_price=signal["sl"],
-        tp_price=signal["tp"],
-    )
+        sl_distance = abs(last["close"] - signal["sl"])
+        lots        = calculate_lot_size(symbol, balance, sl_distance)
+
+        if lots <= 0:
+            log(f"ERROR: Lote inválido para {symbol}. Saltando.")
+            continue
+
+        mt5c.send_order(
+            symbol=symbol,
+            order_type=signal["signal"],
+            volume=lots,
+            sl_price=signal["sl"],
+            tp_price=signal["tp"],
+        )
 
 
 def main():
     log("=" * 55)
-    log(f"  AutoBot iniciado | {SYMBOL} | {TIMEFRAME}")
+    log(f"  AutoBot iniciado | {len(SYMBOLS)} pares | H1")
+    log(f"  Pares: {', '.join(SYMBOLS)}")
+    log(f"  Riesgo: 1% por trade | Límite diario: -{MAX_DAILY_LOSS_PCT}%")
+    log(f"  Máx posiciones simultáneas: {MAX_OPEN_TRADES_TOTAL}")
     log("=" * 55)
 
     if not mt5c.connect():
