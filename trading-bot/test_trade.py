@@ -38,6 +38,15 @@ price = tick.ask
 sl    = round(price - 0.0010, 5)   # 10 pips de SL
 tp    = round(price + 0.0020, 5)   # 20 pips de TP
 
+sym_info    = mt5.symbol_info(SYMBOL)
+filling_mode = sym_info.filling_mode
+if filling_mode & 1:
+    filling = mt5.ORDER_FILLING_FOK
+elif filling_mode & 2:
+    filling = mt5.ORDER_FILLING_IOC
+else:
+    filling = mt5.ORDER_FILLING_RETURN
+
 request = {
     "action":       mt5.TRADE_ACTION_DEAL,
     "symbol":       SYMBOL,
@@ -50,7 +59,7 @@ request = {
     "magic":        99999,
     "comment":      "Test conexion",
     "type_time":    mt5.ORDER_TIME_GTC,
-    "type_filling": mt5.ORDER_FILLING_IOC,
+    "type_filling": filling,
 }
 
 print(f"Enviando orden de prueba: BUY {VOLUME} {SYMBOL} @ {price} | SL={sl} | TP={tp}")

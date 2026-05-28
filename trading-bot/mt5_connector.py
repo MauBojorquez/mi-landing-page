@@ -100,6 +100,14 @@ def send_order(symbol: str, order_type: str, volume: float, sl_price: float, tp_
     tp     = round(tp_price, digits)
     volume = round(volume, 2)
 
+    filling_mode = sym_info.filling_mode
+    if filling_mode & 1:
+        filling = mt5.ORDER_FILLING_FOK
+    elif filling_mode & 2:
+        filling = mt5.ORDER_FILLING_IOC
+    else:
+        filling = mt5.ORDER_FILLING_RETURN
+
     request = {
         "action":       mt5.TRADE_ACTION_DEAL,
         "symbol":       symbol,
@@ -112,7 +120,7 @@ def send_order(symbol: str, order_type: str, volume: float, sl_price: float, tp_
         "magic":        20250101,
         "comment":      "AutoBot",
         "type_time":    mt5.ORDER_TIME_GTC,
-        "type_filling": mt5.ORDER_FILLING_IOC,
+        "type_filling": filling,
     }
 
     result = mt5.order_send(request)
