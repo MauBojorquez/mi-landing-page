@@ -1,12 +1,12 @@
 """
-Estrategia multi-indicador por confluencia:
+Estrategia multi-indicador (versión agresiva):
   EMA 50/200   → define la tendencia principal
-  RSI 14       → detecta momentum y zonas de sobrecompra/sobreventa
-  MACD 12/26/9 → confirma el cruce de señal
+  RSI 14       → confirma momentum (zonas más amplias: 40/60)
+  MACD 12/26/9 → dirección del MACD vs señal (no espera cruce exacto)
   ATR 14       → calibra stop loss y take profit dinámicamente
 
-Señal de COMPRA:  precio > EMA50 > EMA200  AND  RSI < RSI_BUY  AND  MACD cruza arriba
-Señal de VENTA:   precio < EMA50 < EMA200  AND  RSI > RSI_SELL  AND  MACD cruza abajo
+Señal de COMPRA:  precio > EMA50 > EMA200  AND  RSI < 40  AND  MACD > señal
+Señal de VENTA:   precio < EMA50 < EMA200  AND  RSI > 60  AND  MACD < señal
 """
 
 import pandas as pd
@@ -30,18 +30,6 @@ def calculate_indicators(df: pd.DataFrame) -> pd.DataFrame:
     return df.dropna()
 
 
-def _macd_crossed_up(df: pd.DataFrame) -> bool:
-    prev = df.iloc[-2]
-    last = df.iloc[-1]
-    return (prev["macd"] < prev["macd_sig"]) and (last["macd"] > last["macd_sig"])
-
-
-def _macd_crossed_down(df: pd.DataFrame) -> bool:
-    prev = df.iloc[-2]
-    last = df.iloc[-1]
-    return (prev["macd"] > prev["macd_sig"]) and (last["macd"] < last["macd_sig"])
-
-
 def generate_signal(df: pd.DataFrame):
     if len(df) < 3:
         return None
@@ -56,15 +44,15 @@ def generate_signal(df: pd.DataFrame):
     rsi_buy_zone  = last["rsi"] < RSI_BUY
     rsi_sell_zone = last["rsi"] > RSI_SELL
 
-    macd_up   = _macd_crossed_up(df)
-    macd_down = _macd_crossed_down(df)
+    macd_bullish = last["macd"] > last["macd_sig"]
+    macd_bearish = last["macd"] < last["macd_sig"]
 
-    if uptrend and rsi_buy_zone and macd_up:
+    if uptrend and rsi_buy_zone and macd_bullish:
         sl = price - (atr * ATR_SL_MULT)
         tp = price + (atr * ATR_TP_MULT)
         return {"signal": "BUY", "sl": sl, "tp": tp, "atr": atr, "rsi": last["rsi"]}
 
-    if downtrend and rsi_sell_zone and macd_down:
+    if downtrend and rsi_sell_zone and macd_bearish:
         sl = price + (atr * ATR_SL_MULT)
         tp = price - (atr * ATR_TP_MULT)
         return {"signal": "SELL", "sl": sl, "tp": tp, "atr": atr, "rsi": last["rsi"]}

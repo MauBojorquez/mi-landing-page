@@ -14,21 +14,21 @@ MT5_SERVER   = os.getenv("MT5_SERVER", "")
 
 # --- Pares a operar ---
 SYMBOLS   = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD"]
-TIMEFRAME = "H1"
+TIMEFRAME = "M30"
 
 # --- Gestión de riesgo ---
-RISK_PERCENT          = 1.0   # % del balance arriesgado por operación
+RISK_PERCENT          = 1.5   # % del balance arriesgado por operación
 ATR_SL_MULT           = 1.5   # Multiplicador ATR para stop loss
 ATR_TP_MULT           = 2.5   # Multiplicador ATR para take profit
-MAX_OPEN_TRADES_TOTAL = 2     # Máximo de posiciones abiertas en total (todos los pares)
+MAX_OPEN_TRADES_TOTAL = 3     # Máximo de posiciones abiertas en total (todos los pares)
 MAX_DAILY_LOSS_PCT    = 3.0   # Para el bot si pierde este % del balance en el día
 
 # --- Parámetros de indicadores ---
 EMA_FAST   = 50
 EMA_SLOW   = 200
 RSI_PERIOD = 14
-RSI_BUY    = 45
-RSI_SELL   = 55
+RSI_BUY    = 40
+RSI_SELL   = 60
 MACD_FAST  = 12
 MACD_SLOW  = 26
 MACD_SIG   = 9
